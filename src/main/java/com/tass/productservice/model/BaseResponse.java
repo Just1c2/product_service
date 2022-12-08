@@ -3,9 +3,10 @@ package com.tass.productservice.model;
 import lombok.Data;
 
 @Data
-public class BaseResponse {
+public class BaseResponse<T> {
     private int code;
     private String message;
+    private T data;
 
     public BaseResponse(){
         this.code = 1;
@@ -20,5 +21,11 @@ public class BaseResponse {
     public BaseResponse(int code, String messsage){
         this.code = code;
         this.message = messsage;
+    }
+
+    public BaseResponse(int code, String messsage, T list){
+        this.code = code;
+        this.message = messsage;
+        this.data = list;
     }
 }

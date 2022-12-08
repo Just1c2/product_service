@@ -11,14 +11,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 
-import com.tass.productservice.database.entities.Category;
 import com.tass.productservice.database.repository.CategoryExtentRepository;
 import com.tass.productservice.model.dto.CategoryInfo;
 import com.tass.productservice.model.response.SearchCategoryResponse;
 
-import lombok.extern.log4j.Log4j2;
-
-@Log4j2
 public class CategoryExtentRepositoryImpl implements CategoryExtentRepository {
    @PersistenceContext
    Session session;
@@ -65,7 +61,7 @@ public class CategoryExtentRepositoryImpl implements CategoryExtentRepository {
         int fistResult = page * pageSize;
         query.setMaxResults(pageSize).setFirstResult(fistResult);
 
-        List<Category> categoryList = queryItem.getResultList();
+        List<CategoryInfo> categoryList = queryItem.getResultList();
 
         data.setItems(categoryList);
 
@@ -74,58 +70,95 @@ public class CategoryExtentRepositoryImpl implements CategoryExtentRepository {
     }
    }
 
-   public void searchCategoryRelation( String name, Integer page, Integer pageSize, SearchCategoryResponse.Data data){
-    StringBuilder parentSql = new StringBuilder();
+   public void searchCategoryRelation(Integer isRoot, String name, Integer page, Integer pageSize, SearchCategoryResponse.Data data){
+        StringBuilder mainSql = new StringBuilder();
 
-    parentSql.append("FROM category c JOIN category_relationship cr ON c.id = cr.link_id JOIN category c2 ON cr.id = c2.id WHERE 1 = 1");
+        mainSql.append("FROM category c WHERE 1 = 1 ");
 
-    if(StringUtils.isNotBlank(name)){
-        parentSql.append(" AND c.name = '").append(name).append("'");
-    }
+        if(isRoot != null){
+            mainSql.append(" AND c.isRoot = ").append(isRoot);
+        }
+        if(StringUtils.isNotBlank(name)){
+            mainSql.append(" AND c.name LIKE '%").append(name).append("%'");
+        }
 
-    String sqlCount = "SELECT count(*) " + parentSql;
-    log.info(sqlCount);
+        String sqlCount = "SELECT count(*) " + mainSql;
+
+        NativeQuery query = session.createNativeQuery(sqlCount);
+
+        Object totalItemValue = query.getSingleResult();
+
+
+        if(totalItemValue instanceof BigInteger){
+            BigInteger totalItem = (BigInteger) totalItemValue;
     
-    Query query = session.createNativeQuery(sqlCount);
+            data.setTotalItem(totalItem.longValue());
+        }
+        else if (totalItemValue instanceof Number){
+            data.setTotalItem((Long) totalItemValue);
+        }
 
-    Object totalItemValue = query.getSingleResult();
+        if (data.getTotalItem() > 0) {
 
-    if(totalItemValue instanceof BigInteger){
-        BigInteger totalItem = (BigInteger) totalItemValue;
-
-        data.setTotalItem(totalItem.longValue());
-    }
-    else if (totalItemValue instanceof Number){
-        data.setTotalItem((Long) totalItemValue);
-    }
-    StringBuilder childSql = new StringBuilder();
-
-    childSql.append("FROM category c JOIN category_relationship cr ON c.id = cr.id JOIN category c2 ON cr.link_id = c2.id WHERE 1 = 1");
+            String querySql =
+                "SELECT c.id, c.name, c.icon, c.description, c.is_root, (select JSON_ARRAYAGG(JSON_OBJECT('id', d.id, 'name', d.name, 'icon', d.icon, 'description', d.description, 'is_root', d.is_root)) from category d where d.id in (select cr.link_id from category_relationship cr where cr.id = c.id)) as children, (select JSON_ARRAYAGG(JSON_OBJECT('id', e.id, 'name', e.name, 'icon', e.icon, 'description', e.description, 'is_root', e.is_root)) from category e where e.id in (select cr.id from category_relationship cr where cr.link_id = c.id)) as parents " +
+                    mainSql;
+            NativeQuery queryItem = session.createNativeQuery(querySql);
     
-    if(StringUtils.isNotBlank(name)){
-        childSql.append(" AND c.name = '").append(name).append("'");
+    
+            page--;
+            int fistResult = page * pageSize;
+            query.setMaxResults(pageSize).setFirstResult(fistResult);
+    
+            List<CategoryInfo> categoryList = queryItem.getResultList();
+    
+            data.setItems(categoryList);
+    
+        } else {
+            data.setItems(new ArrayList<>());
+        }
+   }
+
+    public void searchCategoryRelation2(Integer isRoot, String name, Integer page, Integer pageSize, SearchCategoryResponse.Data data){
+
+        StringBuilder baseSql = new StringBuilder();
+
+        baseSql.append("FROM c_p WHERE 1 = 1");
+
+        if(StringUtils.isNotBlank(name)){
+            baseSql.append(" AND name LIKE '%").append(name).append("%'");
+        }
+
+        String sqlCount = "SELECT count(*) " + baseSql;
+
+        NativeQuery query = session.createNativeQuery(sqlCount);
+
+        Object totalItemValue = query.getSingleResult();
+
+        if(totalItemValue instanceof BigInteger){
+            BigInteger totalItem = (BigInteger) totalItemValue;
+    
+            data.setTotalItem(totalItem.longValue());
+        }
+        else if (totalItemValue instanceof Number){
+            data.setTotalItem((Long) totalItemValue);
+        }
+
+        if(data.getTotalItem() > 0){
+            String getViewValueQuery = "SELECT * " + baseSql;
+            NativeQuery getViewSql = session.createNativeQuery(getViewValueQuery);
+
+            page--;
+            int fistResult = page * pageSize;
+            query.setMaxResults(pageSize).setFirstResult(fistResult);
+    
+            List<CategoryInfo> categoryList = getViewSql.getResultList();
+    
+            data.setItems(categoryList);
+        }
+        else {
+            data.setItems(new ArrayList<>());
+        }
     }
-
-    if (data.getTotalItem() > 0) {
-
-        String querySql =
-            "SELECT c2.id, c2.name, c2.icon, c2.description, c2.is_root " +
-                parentSql + " UNION SELECT c2.id, c2.name, c2.icon, c2.description, c2.is_root " + childSql;
-        NativeQuery queryItem = session.createNativeQuery(querySql, Category.class);
-
-
-        page--;
-        int fistResult = page * pageSize;
-        query.setMaxResults(pageSize).setFirstResult(fistResult);
-
-        List<Category> categoryList = queryItem.getResultList();
-
-        data.setItems(categoryList);
-
-    } else {
-        data.setItems(new ArrayList<>());
-    }
-    }
-
     
 }

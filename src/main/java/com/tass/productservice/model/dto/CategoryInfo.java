@@ -2,6 +2,8 @@ package com.tass.productservice.model.dto;
 
 import java.util.List;
 
+import javax.persistence.Entity;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Data;
@@ -17,7 +19,7 @@ public class CategoryInfo {
     @JsonProperty("parents")
     private List<CategoryInfo> parents;
 
-    @JsonProperty("childs")
+    @JsonProperty("children")
     private List<CategoryInfo> children;
 
     public CategoryInfo(Long id, String name, String icon, String description, Integer isRoot){
@@ -31,9 +33,6 @@ public class CategoryInfo {
 
     public CategoryInfo(){}
 
-    public CategoryInfo(List<CategoryInfo> parents, List<CategoryInfo> children){
-        this.children = children;
-        this.parents = parents;
-    }
+    
 
 }

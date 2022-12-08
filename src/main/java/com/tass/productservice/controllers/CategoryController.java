@@ -50,11 +50,30 @@ public class CategoryController extends BaseController{
     }
 
     @GetMapping("/getrelation")
-    public SearchCategoryResponse searchRelationFather(@RequestParam(required = false) String name, @RequestParam(required = false) Integer page , @RequestParam(name = "page_size" , required = false) Integer pageSize){
-        return categoryService.searchRelation(name, page, pageSize);
+    public SearchCategoryResponse searchRelation(@RequestParam(name = "is_root" , required = false) Integer isRoot , @RequestParam(required = false) String name, @RequestParam(required = false) Integer page , @RequestParam(name = "page_size" , required = false) Integer pageSize){
+        return categoryService.searchRelation(isRoot, name, page, pageSize);
     }
-    // @GetMapping("/getchildren")
-    // public SearchCategoryResponse searchRelationChildren(@RequestParam(required = false) String name, @RequestParam(required = false) Integer page , @RequestParam(name = "page_size" , required = false) Integer pageSize){
-    //     return categoryService.searchRelationChild(name, page, pageSize);
-    // }
+
+    @GetMapping("/getrelation2")
+    public SearchCategoryResponse searchRelation2(@RequestParam(name = "is_root" , required = false) Integer isRoot , @RequestParam(required = false) String name, @RequestParam(required = false) Integer page , @RequestParam(name = "page_size" , required = false) Integer pageSize){
+        return categoryService.searchRelation2(isRoot, name, page, pageSize);
+    }
+
+    @GetMapping("/getchildren/{id}")
+    public ResponseEntity<BaseResponse> findChildren(@PathVariable Long id){
+        return createdResponse(categoryService.findChildren(id));
+    } 
+
+    @GetMapping("/getparent/{id}")
+    public ResponseEntity<BaseResponse> findParent(@PathVariable Long id){
+        return createdResponse(categoryService.findParent(id));
+    } 
+    @GetMapping("/getchildren2/{id}")
+    public ResponseEntity<BaseResponse> findChildrenByJoin(@PathVariable Long id){
+        return createdResponse(categoryService.findChildrenByJoin(id));
+    }
+    @GetMapping("/getparent2/{id}")
+    public ResponseEntity<BaseResponse> findParentByJoin(@PathVariable Long id){
+        return createdResponse(categoryService.findParentByJoin(id));
+    }
 }

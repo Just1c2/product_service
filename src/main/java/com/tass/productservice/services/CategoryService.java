@@ -173,7 +173,7 @@ public class CategoryService {
         return response;
     }
 
-    public SearchCategoryResponse searchRelation(String name, Integer page, Integer pageSize){
+    public SearchCategoryResponse searchRelation(Integer isRoot, String name, Integer page, Integer pageSize){
         
         if (page == null || page < 1){
             page = 1;
@@ -186,32 +186,67 @@ public class CategoryService {
         data.setCurrentPage(page);
         data.setPageSize(pageSize);
 
-        categoryRepository.searchCategoryRelation(name, page, pageSize, data);
+        categoryRepository.searchCategoryRelation(isRoot, name, page, pageSize, data);
 
         SearchCategoryResponse response = new SearchCategoryResponse();
         response.setData(data);
         return response;
     }
-    // public SearchCategoryResponse searchRelationChild(String name, Integer page, Integer pageSize){
+
+
+    public SearchCategoryResponse searchRelation2(Integer isRoot, String name, Integer page, Integer pageSize){
         
-    //     if (page == null || page < 1){
-    //         page = 1;
-    //     }
-    //     if (pageSize == null || pageSize < 1){
-    //         pageSize = 10;
-    //     }
+        if (page == null || page < 1){
+            page = 1;
+        }
+        if (pageSize == null || pageSize < 1){
+            pageSize = 10;
+        }
 
-    //     SearchCategoryResponse.Data data = new SearchCategoryResponse.Data();
-    //     data.setCurrentPage(page);
-    //     data.setPageSize(pageSize);
+        SearchCategoryResponse.Data data = new SearchCategoryResponse.Data();
+        data.setCurrentPage(page);
+        data.setPageSize(pageSize);
 
-    //     categoryRepository.searchCategoryChild(name, page, pageSize, data);
+        categoryRepository.searchCategoryRelation2(isRoot, name, page, pageSize, data);
 
-    //     SearchCategoryResponse response = new SearchCategoryResponse();
-    //     response.setData(data);
-    //     return response;
-    // }
-    
+        SearchCategoryResponse response = new SearchCategoryResponse();
+        response.setData(data);
+        return response;
+    }
+
+    public BaseResponse findChildren(Long id) throws ApiException{
+        Optional<Category> childCategory = categoryRepository.findById(id);
+        if(childCategory.isEmpty()){
+            throw new ApiException(ERROR.INVALID_PARAM, "category not found");
+        }
+        return new BaseResponse(200, "SUCCESS", childCategory.get().getCategories());
+    }
+
+    public BaseResponse findParent(Long id) throws ApiException{
+        Optional<Category> parentCategory = categoryRepository.findById(id);
+        if(parentCategory.isEmpty()){
+            throw new ApiException(ERROR.INVALID_PARAM, "category not found");
+        }
+        return new BaseResponse(200, "SUCCESS", parentCategory.get().getParentCategories());
+    }
+
+    public BaseResponse findChildrenByJoin(Long id) throws ApiException {
+        Optional<Category> optionalCategory = categoryRepository.findById(id);
+        if (!optionalCategory.isPresent()) {
+            throw new ApiException(ERROR.INVALID_PARAM, "category does not exist!");
+        }
+        String query = "select * from category c join category_relationship cr where c.id = cr.id and c.id =" + id + " group by c.id";
+        return new BaseResponse(200, "success", categoryRepository.findAll(query));
+    }
+
+    public BaseResponse findParentByJoin(Long id) throws ApiException {
+        Optional<Category> optionalCategory = categoryRepository.findById(id);
+        if (!optionalCategory.isPresent()) {
+            throw new ApiException(ERROR.INVALID_PARAM, "category does not exist!");
+        }
+        String query = "select * from category c join category_relationship cr where c.id = cr.link_id and c.id =" + id + " group by c.id";
+        return new BaseResponse(200, "success", categoryRepository.findAll(query));
+    }
 
     private void validateRequestCreateException(CategoryRequest request) throws ApiException{
 

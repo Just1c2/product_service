@@ -2,7 +2,6 @@ package com.tass.productservice.model.response;
 
 import java.util.List;
 
-import com.tass.productservice.database.entities.Category;
 import com.tass.productservice.model.BasePagingData;
 import com.tass.productservice.model.BaseResponse;
 import com.tass.productservice.model.dto.CategoryInfo;
@@ -19,6 +18,6 @@ public class SearchCategoryResponse  extends BaseResponse{
 
     @lombok.Data
     public static class Data extends BasePagingData{
-        private List<Category> items;
+        private List<CategoryInfo> items;
     }
 }
