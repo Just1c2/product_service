@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 
+import com.tass.productservice.database.entities.Category;
 import com.tass.productservice.database.repository.CategoryExtentRepository;
 import com.tass.productservice.model.dto.CategoryInfo;
 import com.tass.productservice.model.response.SearchCategoryResponse;
@@ -159,6 +160,11 @@ public class CategoryExtentRepositoryImpl implements CategoryExtentRepository {
         else {
             data.setItems(new ArrayList<>());
         }
+    }
+
+    @Override
+    public List<Category> findAll(String query) {
+        return session.createNativeQuery(query, Category.class).getResultList();
     }
     
 }

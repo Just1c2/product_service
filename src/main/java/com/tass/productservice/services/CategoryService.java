@@ -2,6 +2,7 @@ package com.tass.productservice.services;
 
 import com.tass.productservice.database.entities.Category;
 import com.tass.productservice.database.entities.CategoryRelationship;
+import com.tass.productservice.database.repository.CategoryExtentRepository;
 import com.tass.productservice.database.repository.CategoryRelationshipRepository;
 import com.tass.productservice.database.repository.CategoryRepository;
 import com.tass.productservice.model.ApiException;
@@ -219,7 +220,8 @@ public class CategoryService {
         if(childCategory.isEmpty()){
             throw new ApiException(ERROR.INVALID_PARAM, "category not found");
         }
-        return new BaseResponse(200, "SUCCESS", childCategory.get().getCategories());
+        String query = "SELECT c.* from category c, category_relationship cr WHERE c.id = cr.id and c.id = " + id;
+        return new BaseResponse(200, "SUCCESS", categoryRepository.findAll(query));
     }
 
     public BaseResponse findParent(Long id) throws ApiException{
@@ -227,7 +229,8 @@ public class CategoryService {
         if(parentCategory.isEmpty()){
             throw new ApiException(ERROR.INVALID_PARAM, "category not found");
         }
-        return new BaseResponse(200, "SUCCESS", parentCategory.get().getParentCategories());
+        String query = "SELECT c.* from category c, category_relationship cr WHERE c.id = cr.link_id and c.id = " + id;
+        return new BaseResponse(200, "SUCCESS", categoryRepository.findAll(query));
     }
 
     public BaseResponse findChildrenByJoin(Long id) throws ApiException {
@@ -235,7 +238,7 @@ public class CategoryService {
         if (!optionalCategory.isPresent()) {
             throw new ApiException(ERROR.INVALID_PARAM, "category does not exist!");
         }
-        String query = "select * from category c join category_relationship cr where c.id = cr.id and c.id =" + id + " group by c.id";
+        String query = "select c.* from category c join category_relationship cr on c.id = cr.link_id where exists(select null from category c where cr.id = c.id and c.id = " + id + ")";
         return new BaseResponse(200, "success", categoryRepository.findAll(query));
     }
 
@@ -244,7 +247,7 @@ public class CategoryService {
         if (!optionalCategory.isPresent()) {
             throw new ApiException(ERROR.INVALID_PARAM, "category does not exist!");
         }
-        String query = "select * from category c join category_relationship cr where c.id = cr.link_id and c.id =" + id + " group by c.id";
+        String query = "select c.* from category c join category_relationship cr on c.id = cr.id where exists(select null from category c where cr.link_id = c.id and c.id = " + id + ")";
         return new BaseResponse(200, "success", categoryRepository.findAll(query));
     }
 
